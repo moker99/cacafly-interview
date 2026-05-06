@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Services\SocialAuthService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
-    // ── Q1 helpers ──────────────────────────────────────────────────────────
+    public function __construct(private readonly SocialAuthService $socialAuth) {}
 
     public function showLogin()
     {
@@ -18,80 +19,47 @@ class AuthController extends Controller
 
     // ── Google ───────────────────────────────────────────────────────────────
 
-    public function redirectToGoogle()
+    public function redirectToGoogle(): RedirectResponse
     {
-        return Socialite::driver('google')
-            ->scopes(['openid', 'profile', 'email'])
-            ->redirect();
+        /** @var \Laravel\Socialite\Two\AbstractProvider $driver */
+        $driver = Socialite::driver('google');
+
+        return $driver->scopes(['openid', 'profile', 'email'])->redirect();
     }
 
-    public function handleGoogleCallback()
+    public function handleGoogleCallback(): RedirectResponse
     {
         $socialUser = Socialite::driver('google')->user();
+        $user = $this->socialAuth->findOrCreateFromGoogle($socialUser);
 
-        $user = User::updateOrCreate(
-            ['provider' => 'google', 'provider_id' => $socialUser->getId()],
-            [
-                'name'   => $socialUser->getName(),
-                'email'  => $socialUser->getEmail(),
-                'avatar' => $socialUser->getAvatar(),
-                'token'  => $socialUser->token,
-            ]
-        );
-
-        Auth::login($user, true);
+        Auth::login($user, remember: true);
 
         return redirect()->route('dashboard');
     }
 
     // ── Facebook ─────────────────────────────────────────────────────────────
 
-    public function redirectToFacebook()
+    public function redirectToFacebook(): RedirectResponse
     {
-        return Socialite::driver('facebook')
-            ->setScopes(['public_profile', 'email', 'user_likes'])
-            ->redirect();
+        /** @var \Laravel\Socialite\Two\AbstractProvider $driver */
+        $driver = Socialite::driver('facebook');
+
+        return $driver->setScopes(['public_profile', 'email', 'user_likes'])->redirect();
     }
 
-    public function handleFacebookCallback()
+    public function handleFacebookCallback(): RedirectResponse
     {
         $socialUser = Socialite::driver('facebook')->user();
+        $user = $this->socialAuth->findOrCreateFromFacebook($socialUser);
 
-        // Fetch liked pages from Graph API
-        $likedPages = $this->fetchFacebookLikedPages($socialUser->token);
-
-        $user = User::updateOrCreate(
-            ['provider' => 'facebook', 'provider_id' => $socialUser->getId()],
-            [
-                'name'        => $socialUser->getName(),
-                'email'       => $socialUser->getEmail() ?? $socialUser->getId() . '@facebook.com',
-                'avatar'      => $socialUser->getAvatar(),
-                'token'       => $socialUser->token,
-                'liked_pages' => $likedPages,
-            ]
-        );
-
-        Auth::login($user, true);
+        Auth::login($user, remember: true);
 
         return redirect()->route('dashboard');
     }
 
-    private function fetchFacebookLikedPages(string $token): array
-    {
-        try {
-            $url      = "https://graph.facebook.com/me/likes?fields=name,category,picture&access_token={$token}";
-            $response = file_get_contents($url);
-            $data     = json_decode($response, true);
-
-            return $data['data'] ?? [];
-        } catch (\Throwable $e) {
-            return [];
-        }
-    }
-
     // ── Logout ───────────────────────────────────────────────────────────────
 
-    public function logout(Request $request)
+    public function logout(Request $request): RedirectResponse
     {
         Auth::logout();
         $request->session()->invalidate();
@@ -104,8 +72,6 @@ class AuthController extends Controller
 
     public function dashboard()
     {
-        $user = Auth::user();
-
-        return view('dashboard', compact('user'));
+        return view('dashboard', ['user' => Auth::user()]);
     }
 }

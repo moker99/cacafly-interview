@@ -104,6 +104,9 @@
         <button class="btn btn-primary" id="uploadBtn" onclick="startUpload()">
             ⬆ 開始上傳
         </button>
+        <button class="btn btn-secondary" id="resetBtn" onclick="resetUpload()" style="display:none">
+            ↺ 重新上傳
+        </button>
         <span class="counter" id="counter"></span>
     </div>
 </div>
@@ -195,7 +198,11 @@ async function startUpload() {
     }
 
     const allDone = files.every(e => e.status === 'done');
-    if (allDone) showToast();
+    if (allDone) {
+        showToast();
+        uploadBtn.style.display = 'none';
+        document.getElementById('resetBtn').style.display = '';
+    }
 
     uploadBtn.disabled = false;
 }
@@ -277,6 +284,19 @@ function showToast() {
     const toast = document.getElementById('toast');
     toast.classList.add('show');
     setTimeout(() => toast.classList.remove('show'), 3500);
+}
+
+function resetUpload() {
+    files = [];
+    fileList.innerHTML = '';
+    fileInput.value = '';
+    fileInput.disabled = false;
+    dropZone.querySelector('input').disabled = false;
+    uploadBtn.disabled = false;
+    uploadBtn.style.display = '';
+    document.getElementById('resetBtn').style.display = 'none';
+    actionRow.style.display = 'none';
+    counter.textContent = '';
 }
 
 function formatBytes(bytes) {

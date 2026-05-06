@@ -5,20 +5,26 @@ use App\Http\Controllers\UploadController;
 use Illuminate\Support\Facades\Route;
 
 // ── Public ────────────────────────────────────────────────────────────────────
-Route::get('/', fn () => auth()->check()
-    ? redirect()->route('dashboard')
-    : redirect()->route('login')
+Route::get(
+    '/',
+    fn() => auth()->check()
+        ? redirect()->route('dashboard')
+        : redirect()->route('login')
 );
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login')->middleware('guest');
 
 // Google OAuth
-Route::get('/auth/google',          [AuthController::class, 'redirectToGoogle'])->name('auth.google');
-Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
+Route::prefix('auth/google')->name('auth.google.')->group(function () {
+    Route::get('/',         [AuthController::class, 'redirectToGoogle'])->name('redirect');
+    Route::get('/callback', [AuthController::class, 'handleGoogleCallback'])->name('callback');
+});
 
 // Facebook OAuth
-Route::get('/auth/facebook',          [AuthController::class, 'redirectToFacebook'])->name('auth.facebook');
-Route::get('/auth/facebook/callback', [AuthController::class, 'handleFacebookCallback']);
+Route::prefix('auth/facebook')->name('auth.facebook.')->group(function () {
+    Route::get('/',         [AuthController::class, 'redirectToFacebook'])->name('redirect');
+    Route::get('/callback', [AuthController::class, 'handleFacebookCallback'])->name('callback');
+});
 
 // ── Authenticated ─────────────────────────────────────────────────────────────
 Route::middleware('auth')->group(function () {
