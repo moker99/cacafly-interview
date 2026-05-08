@@ -30,6 +30,7 @@ Route::prefix('auth/facebook')->name('auth.facebook.')->group(function () {
 Route::middleware('auth')->group(function () {
     // Q1 – dashboard (profile + liked pages)
     Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard');
+    Route::post('/dashboard/refresh-likes', [AuthController::class, 'refreshLikes'])->name('dashboard.refresh-likes');
 
     // Q2 – image upload
     Route::get('/upload',  [UploadController::class, 'index'])->name('upload.index');

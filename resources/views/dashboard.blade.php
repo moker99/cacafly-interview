@@ -86,7 +86,29 @@
 
 {{-- ── Q1: Liked Pages ──────────────────────────────────────────── --}}
 <div class="card">
-    <h3 style="margin-bottom:4px;">按讚的粉絲專頁</h3>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <h3 style="margin:0;">按讚的粉絲專頁</h3>
+        @if($user->provider === 'facebook')
+        <form method="POST" action="{{ route('dashboard.refresh-likes') }}">
+            @csrf
+            <button type="submit" class="btn btn-secondary" style="font-size:.85rem;padding:5px 14px;">
+                ↺ 重新抓取
+            </button>
+        </form>
+        @endif
+    </div>
+
+    @if(session('success'))
+        <p style="font-size:.85rem;color:#155724;background:#d4edda;padding:6px 12px;border-radius:6px;margin-bottom:8px;">
+            {{ session('success') }}
+        </p>
+    @endif
+    @if(session('error'))
+        <p style="font-size:.85rem;color:#721c24;background:#f8d7da;padding:6px 12px;border-radius:6px;margin-bottom:8px;">
+            {{ session('error') }}
+        </p>
+    @endif
+
     <p style="font-size:.85rem;color:#606770;margin-bottom:12px;">
         @if($user->provider === 'facebook')
             透過 Facebook Graph API <code>GET /me/likes</code> 取得，需 <code>user_likes</code> 權限。

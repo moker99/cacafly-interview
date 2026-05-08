@@ -32,7 +32,7 @@ class AuthController extends Controller
         $socialUser = Socialite::driver('google')->user();
         $user = $this->socialAuth->findOrCreateFromGoogle($socialUser);
 
-        Auth::login($user, remember: true);
+        Auth::login($user, remember: false);
 
         return redirect()->route('dashboard');
     }
@@ -52,7 +52,7 @@ class AuthController extends Controller
         $socialUser = Socialite::driver('facebook')->user();
         $user = $this->socialAuth->findOrCreateFromFacebook($socialUser);
 
-        Auth::login($user, remember: true);
+        Auth::login($user, remember: false);
 
         return redirect()->route('dashboard');
     }
@@ -73,5 +73,20 @@ class AuthController extends Controller
     public function dashboard()
     {
         return view('dashboard', ['user' => Auth::user()]);
+    }
+
+    public function refreshLikes(): RedirectResponse
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        if ($user->provider !== 'facebook' || !$user->token) {
+            return redirect()->route('dashboard')->with('error', '僅限 Facebook 帳號使用此功能。');
+        }
+
+        $pages = $this->socialAuth->fetchLikedPages($user->token);
+        $user->update(['liked_pages' => $pages]);
+
+        return redirect()->route('dashboard')->with('success', '已重新抓取按讚頁面。');
     }
 }

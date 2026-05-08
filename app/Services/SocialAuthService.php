@@ -35,7 +35,7 @@ class SocialAuthService
         );
     }
 
-    private function fetchLikedPages(string $token): array
+    public function fetchLikedPages(string $token): array
     {
         $response = Http::get('https://graph.facebook.com/me/likes', [
             'fields'       => 'name,category,picture',
